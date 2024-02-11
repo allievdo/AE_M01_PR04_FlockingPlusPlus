@@ -6,7 +6,10 @@ public class Flocker : Kinematic
 {
     public GameObject myCohereTarget;
     BlendedSteering mySteering;
+    PrioritySteering myAdvancedSteering;
     Kinematic[] kBirds;
+
+    public bool avoidObstacles = false;
 
     void Start ()
     {
@@ -47,12 +50,42 @@ public class Flocker : Kinematic
         mySteering.behaviours[2] = new BehaviourAndWeight();
         mySteering.behaviours[2].behavior = myRotateType;
         mySteering.behaviours[2].weight = 1f;
+
+        //Priority
+        ObstacleAvoidance myAvoid = new ObstacleAvoidance();
+        myAvoid.character = this;
+        myAvoid.target = myCohereTarget;
+        myAvoid.flee = true;
+
+        BlendedSteering myPrioritySteering = new BlendedSteering();
+        myPrioritySteering.behaviours = new BehaviourAndWeight[1];
+        myPrioritySteering.behaviours[0] = new BehaviourAndWeight();
+        myPrioritySteering.behaviours[0].behavior = myAvoid;
+        myPrioritySteering.behaviours[0].weight = 1f;
+
+        myAdvancedSteering = new PrioritySteering();
+        myAdvancedSteering.groups = new BlendedSteering[2];
+        myAdvancedSteering.groups[0] = new BlendedSteering();
+        myAdvancedSteering.groups[0] = myPrioritySteering;
+        myAdvancedSteering.groups[1] = new BlendedSteering();
+        myAdvancedSteering.groups[1] = mySteering;
+
     }
 
     protected override void Update()
     {
         steeringUpdate = new SteeringOutput();
-        steeringUpdate = mySteering.GetSteering();
+
+        if(!avoidObstacles)
+        {
+            steeringUpdate = mySteering.GetSteering();
+        }
+
+        else
+        {
+            steeringUpdate = myAdvancedSteering.GetSteering();
+        }
+
         base.Update();
     }
 }
